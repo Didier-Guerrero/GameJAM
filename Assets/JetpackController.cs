@@ -3,33 +3,33 @@ using UnityEngine.UI;
 
 public class JetpackController : MonoBehaviour
 {
-    public float jetpackForce = 10f; // Fuerza del jetpack
-    public float forwardSpeed = 5f; // Velocidad hacia adelante
-    public float fuel = 100f; // Cantidad inicial de gasolina
-    public float maxFuel = 100f; // Cantidad máxima de gasolina
-    public float fuelConsumptionRate = 1f; // Tasa de consumo de gasolina por segundo
-    public float boostFuelConsumptionRate = 5f; // Tasa de consumo de gasolina cuando se asciende
-    public Text fuelText; // UI Text para mostrar la gasolina restante
-    public float rotationSpeed = 5f; // Velocidad de rotación
-    public float heightThreshold = -5f; // Umbral de altura
-    public float destroyHeight = 4.95f; // Altura a la que se destruye la nave
-    public Sprite normalSprite; // Sprite normal
-    public Sprite lowHeightSprite; // Sprite cuando está por debajo del umbral
-    public Sprite powerUpSprite; // Sprite cuando el power-up está activo
-    public int playerHealth = 3; // Vida del jugador
-    public Text healthText; // UI Text para mostrar la vida del jugador
-    public GameObject bulletPrefab; // Prefab de la bala normal
-    public GameObject powerUpBulletPrefab; // Prefab de la bala del power-up
-    public Transform firePoint; // Punto desde donde se dispara la bala
-    public float fireRate = 0.5f; // Cadencia de disparo
-    private bool tripleShotEnabled = false; // Indica si el disparo triple está habilitado
-    private bool powerUpEnabled = false; // Indica si la bala del power-up está habilitada
-    private float nextFire = 0.0f; // Tiempo para el próximo disparo
+    public float jetpackForce = 10f;
+    public float forwardSpeed = 5f;
+    public float fuel = 100f;
+    public float maxFuel = 100f;
+    public float fuelConsumptionRate = 1f;
+    public float boostFuelConsumptionRate = 5f;
+    public Text fuelText;
+    public float rotationSpeed = 5f;
+    public float heightThreshold = -5f;
+    public float destroyHeight = 4.95f;
+    public Sprite normalSprite;
+    public Sprite lowHeightSprite;
+    public Sprite powerUpSprite;
+    public int playerHealth = 3;
+    public Text healthText;
+    public GameObject bulletPrefab;
+    public GameObject powerUpBulletPrefab;
+    public Transform firePoint;
+    public float fireRate = 0.5f;
+    private bool tripleShotEnabled = false;
+    private bool powerUpEnabled = false;
+    private float nextFire = 0.0f;
 
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
-    private bool isFrozen = false; // Estado de congelación
-    private bool isDestroyed = false; // Estado de destrucción
+    private bool isFrozen = false;
+    private bool isDestroyed = false;
 
     void Start()
     {
@@ -51,17 +51,15 @@ public class JetpackController : MonoBehaviour
     {
         if (isDestroyed)
         {
-            return; // Si ya está destruido, salir de la función
+            return;
         }
 
         if (!isFrozen)
         {
             if (fuel > 0)
             {
-                // Consumo de gasolina por segundo
                 fuel -= fuelConsumptionRate * Time.deltaTime;
 
-                // Aplicar fuerza hacia arriba si se mantiene presionada la tecla de espacio y consumir más gasolina
                 if (Input.GetKey(KeyCode.Space))
                 {
                     rb.velocity = new Vector2(forwardSpeed, jetpackForce);
@@ -69,19 +67,17 @@ public class JetpackController : MonoBehaviour
                 }
                 else
                 {
-                    // Mantener la velocidad hacia adelante
                     rb.velocity = new Vector2(forwardSpeed, rb.velocity.y);
                 }
 
-                // Cambiar la orientación del personaje basado en su velocidad vertical
                 float targetRotationZ = 0;
-                if (rb.velocity.y > 0) // Está subiendo
+                if (rb.velocity.y > 0)
                 {
-                    targetRotationZ = 30; // Rotar hacia arriba
+                    targetRotationZ = 30;
                 }
-                else if (rb.velocity.y < 0) // Está bajando
+                else if (rb.velocity.y < 0)
                 {
-                    targetRotationZ = -30; // Rotar hacia abajo
+                    targetRotationZ = -30;
                 }
 
                 Quaternion targetRotation = Quaternion.Euler(0, 0, targetRotationZ);
@@ -89,7 +85,6 @@ public class JetpackController : MonoBehaviour
             }
             else
             {
-                // Si no hay gasolina, el personaje solo avanza hacia adelante
                 rb.velocity = new Vector2(forwardSpeed, rb.velocity.y);
             }
 
@@ -106,7 +101,8 @@ public class JetpackController : MonoBehaviour
             }
             else
             {
-                if (powerUpEnabled)
+                // Cambiar el sprite si el power-up está habilitado
+                if (powerUpEnabled || tripleShotEnabled)
                 {
                     spriteRenderer.sprite = powerUpSprite;
                 }
@@ -118,7 +114,6 @@ public class JetpackController : MonoBehaviour
 
             UpdateFuelUI();
 
-            // Manejar disparo
             if (Input.GetKey(KeyCode.F) && Time.time > nextFire)
             {
                 nextFire = Time.time + fireRate;
@@ -150,8 +145,8 @@ public class JetpackController : MonoBehaviour
     void FreezeCharacter()
     {
         isFrozen = true;
-        rb.velocity = Vector2.zero; // Detener el movimiento
-        rb.isKinematic = true; // Desactivar la física
+        rb.velocity = Vector2.zero;
+        rb.isKinematic = true;
     }
 
     void TakeDamage()
@@ -163,7 +158,6 @@ public class JetpackController : MonoBehaviour
         if (playerHealth <= 0)
         {
             isDestroyed = true;
-            // Aquí puedes agregar lógica adicional cuando el jugador muere, como reiniciar el nivel
             FreezeCharacter();
             spriteRenderer.sprite = lowHeightSprite;
         }
@@ -187,18 +181,18 @@ public class JetpackController : MonoBehaviour
 
     public void EnableTripleShot()
     {
-        spriteRenderer.sprite = powerUpSprite;
         tripleShotEnabled = true;
-
-        // Opcionalmente, puedes agregar un temporizador para deshabilitar el triple disparo después de un tiempo
+        powerUpEnabled = false; // Deshabilitar otro power-up
+        Debug.Log("Triple Shot habilitado.");
+        spriteRenderer.sprite = powerUpSprite;
     }
 
     public void EnablePowerUpShot()
     {
         powerUpEnabled = true;
+        tripleShotEnabled = false; // Deshabilitar disparo triple
         Debug.Log("Power-up habilitado, ahora disparando balas de power-up.");
-        spriteRenderer.sprite = powerUpSprite; // Cambiar al sprite del power-up
-        // Opcionalmente, puedes agregar un temporizador para deshabilitar el disparo de power-up después de un tiempo
+        spriteRenderer.sprite = powerUpSprite;
     }
 
     public void RestoreFuel()
@@ -244,7 +238,6 @@ public class JetpackController : MonoBehaviour
             }
             else
             {
-                spriteRenderer.sprite = powerUpSprite;
                 centralBullet = Instantiate(powerUpBulletPrefab, firePoint.position, Quaternion.identity);
                 leftBullet = Instantiate(powerUpBulletPrefab, firePoint.position, Quaternion.Euler(0, 0, 15));
                 rightBullet = Instantiate(powerUpBulletPrefab, firePoint.position, Quaternion.Euler(0, 0, -15));
