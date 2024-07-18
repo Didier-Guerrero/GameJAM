@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Bullet : MonoBehaviour
+public class BulletPowerUp : MonoBehaviour
 {
     public float speed = 20f; // Velocidad de la bala
     public float lifeTime = 2f; // Tiempo de vida de la bala antes de desaparecer
@@ -16,7 +16,7 @@ public class Bullet : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Enemy")|| collision.gameObject.CompareTag("Bullet2"))
+        if (collision.gameObject.CompareTag("Enemy"))
         {
             // Destruir la bala al impactar con un enemigo
             Destroy(gameObject);

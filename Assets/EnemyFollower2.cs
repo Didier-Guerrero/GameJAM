@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class EnemyFollower : MonoBehaviour
+public class EnemyFollower2 : MonoBehaviour
 {
     public Transform player; // Referencia al jugador
     public GameObject bulletPrefab; // Prefab de la bala
@@ -13,6 +13,7 @@ public class EnemyFollower : MonoBehaviour
     public float damageDuration = 0.5f; // Duración del sprite de daño
     public int maxHealth = 3; // Vida máxima del enemigo
     public GameObject powerUpPrefab; // Prefab del power-up que deja al morir
+    public float detectionRange = 5f; // Rango de detección del jugador
 
     private SpriteRenderer spriteRenderer;
     private float fireTimer = 0f;
@@ -26,6 +27,7 @@ public class EnemyFollower : MonoBehaviour
         spriteRenderer.sprite = normalSprite; // Asegurarse de que el sprite normal esté configurado inicialmente
         currentHealth = maxHealth; // Inicializar la vida actual al máximo
         rb.gravityScale = 0; // Asegurarse de que la gravedad no afecta al enemigo
+        rb.freezeRotation = true; // Evitar que el enemigo gire al colisionar
     }
 
     void Update()
@@ -38,26 +40,31 @@ public class EnemyFollower : MonoBehaviour
 
         if (currentHealth > 0)
         {
-            // Seguir la posición y del jugador
-            Vector3 targetPosition = new Vector3(transform.position.x, player.position.y, transform.position.z);
-            transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
+            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
-            Debug.Log($"Enemigo moviéndose hacia {targetPosition}, posición actual {transform.position}");
-
-            // Disparar cuando el enemigo esté a la misma altura que el jugador
-            if (Mathf.Abs(transform.position.y - player.position.y) < 0.1f)
+            if (distanceToPlayer <= detectionRange)
             {
-                if (fireTimer <= 0f)
+                // Seguir la posición del jugador
+                Vector3 targetPosition = new Vector3(transform.position.x, player.position.y, transform.position.z);
+                transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
+
+                Debug.Log($"Enemigo moviéndose hacia {targetPosition}, posición actual {transform.position}");
+
+                // Disparar cuando el enemigo esté a la misma altura que el jugador
+                if (Mathf.Abs(transform.position.y - player.position.y) < 0.1f)
                 {
-                    Shoot();
-                    fireTimer = fireCooldown;
+                    if (fireTimer <= 0f)
+                    {
+                        Shoot();
+                        fireTimer = fireCooldown;
+                    }
                 }
-            }
 
-            // Reducir el temporizador de enfriamiento
-            if (fireTimer > 0f)
-            {
-                fireTimer -= Time.deltaTime;
+                // Reducir el temporizador de enfriamiento
+                if (fireTimer > 0f)
+                {
+                    fireTimer -= Time.deltaTime;
+                }
             }
         }
     }
@@ -66,7 +73,7 @@ public class EnemyFollower : MonoBehaviour
     {
         if (firePoint != null && bulletPrefab != null)
         {
-            GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
+            GameObject bullet = Instantiate(bulletPrefab, -firePoint.position, Quaternion.identity);
             Physics2D.IgnoreCollision(bullet.GetComponent<Collider2D>(), GetComponent<Collider2D>());
             Debug.Log("Disparando bala");
         }

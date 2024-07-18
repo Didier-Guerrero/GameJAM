@@ -6,6 +6,7 @@ public class JetpackController : MonoBehaviour
     public float jetpackForce = 10f; // Fuerza del jetpack
     public float forwardSpeed = 5f; // Velocidad hacia adelante
     public float fuel = 100f; // Cantidad inicial de gasolina
+    public float maxFuel = 100f; // Cantidad máxima de gasolina
     public float fuelConsumptionRate = 1f; // Tasa de consumo de gasolina por segundo
     public float boostFuelConsumptionRate = 5f; // Tasa de consumo de gasolina cuando se asciende
     public Text fuelText; // UI Text para mostrar la gasolina restante
@@ -14,8 +15,16 @@ public class JetpackController : MonoBehaviour
     public float destroyHeight = 4.95f; // Altura a la que se destruye la nave
     public Sprite normalSprite; // Sprite normal
     public Sprite lowHeightSprite; // Sprite cuando está por debajo del umbral
+    public Sprite powerUpSprite; // Sprite cuando el power-up está activo
     public int playerHealth = 3; // Vida del jugador
     public Text healthText; // UI Text para mostrar la vida del jugador
+    public GameObject bulletPrefab; // Prefab de la bala normal
+    public GameObject powerUpBulletPrefab; // Prefab de la bala del power-up
+    public Transform firePoint; // Punto desde donde se dispara la bala
+    public float fireRate = 0.5f; // Cadencia de disparo
+    private bool tripleShotEnabled = false; // Indica si el disparo triple está habilitado
+    private bool powerUpEnabled = false; // Indica si la bala del power-up está habilitada
+    private float nextFire = 0.0f; // Tiempo para el próximo disparo
 
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
@@ -28,6 +37,14 @@ public class JetpackController : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         UpdateFuelUI();
         UpdateHealthUI();
+        if (firePoint == null)
+        {
+            Debug.LogError("FirePoint no está asignado en el inspector.");
+        }
+        else
+        {
+            Debug.Log("FirePoint asignado correctamente.");
+        }
     }
 
     void Update()
@@ -89,10 +106,31 @@ public class JetpackController : MonoBehaviour
             }
             else
             {
-                spriteRenderer.sprite = normalSprite;
+                if (powerUpEnabled)
+                {
+                    spriteRenderer.sprite = powerUpSprite;
+                }
+                else
+                {
+                    spriteRenderer.sprite = normalSprite;
+                }
             }
 
             UpdateFuelUI();
+
+            // Manejar disparo
+            if (Input.GetKey(KeyCode.F) && Time.time > nextFire)
+            {
+                nextFire = Time.time + fireRate;
+                if (tripleShotEnabled)
+                {
+                    FireTripleShot();
+                }
+                else
+                {
+                    FireSingleShot();
+                }
+            }
         }
     }
 
@@ -144,6 +182,78 @@ public class JetpackController : MonoBehaviour
         if (healthText != null)
         {
             healthText.text = "Health: " + playerHealth.ToString();
+        }
+    }
+
+    public void EnableTripleShot()
+    {
+        spriteRenderer.sprite = powerUpSprite;
+        tripleShotEnabled = true;
+
+        // Opcionalmente, puedes agregar un temporizador para deshabilitar el triple disparo después de un tiempo
+    }
+
+    public void EnablePowerUpShot()
+    {
+        powerUpEnabled = true;
+        Debug.Log("Power-up habilitado, ahora disparando balas de power-up.");
+        spriteRenderer.sprite = powerUpSprite; // Cambiar al sprite del power-up
+        // Opcionalmente, puedes agregar un temporizador para deshabilitar el disparo de power-up después de un tiempo
+    }
+
+    public void RestoreFuel()
+    {
+        fuel = maxFuel;
+        UpdateFuelUI();
+        Debug.Log("Gasolina restaurada al 100%.");
+    }
+
+    void FireSingleShot()
+    {
+        if (firePoint != null)
+        {
+            GameObject bullet;
+            if (powerUpEnabled)
+            {
+                bullet = Instantiate(powerUpBulletPrefab, firePoint.position, Quaternion.identity);
+                Debug.Log("Disparando bala de power-up.");
+            }
+            else
+            {
+                bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
+                Debug.Log("Disparando bala normal.");
+            }
+        }
+        else
+        {
+            Debug.LogError("FirePoint no está asignado en el inspector.");
+        }
+    }
+
+    void FireTripleShot()
+    {
+        if (firePoint != null)
+        {
+            GameObject centralBullet, leftBullet, rightBullet;
+            if (powerUpEnabled)
+            {
+                centralBullet = Instantiate(powerUpBulletPrefab, firePoint.position, Quaternion.identity);
+                leftBullet = Instantiate(powerUpBulletPrefab, firePoint.position, Quaternion.Euler(0, 0, 15));
+                rightBullet = Instantiate(powerUpBulletPrefab, firePoint.position, Quaternion.Euler(0, 0, -15));
+                Debug.Log("Disparando triple bala de power-up.");
+            }
+            else
+            {
+                spriteRenderer.sprite = powerUpSprite;
+                centralBullet = Instantiate(powerUpBulletPrefab, firePoint.position, Quaternion.identity);
+                leftBullet = Instantiate(powerUpBulletPrefab, firePoint.position, Quaternion.Euler(0, 0, 15));
+                rightBullet = Instantiate(powerUpBulletPrefab, firePoint.position, Quaternion.Euler(0, 0, -15));
+                Debug.Log("Disparando triple bala normal.");
+            }
+        }
+        else
+        {
+            Debug.LogError("FirePoint no está asignado en el inspector.");
         }
     }
 }
